@@ -129,7 +129,7 @@
 #include <LiquidCrystal.h>
 #include <Adafruit_GFX.h>      // Comment for VERSION 1
 #include <Adafruit_SSD1306.h>  // Comment for VERSION 1 
-#include <Adafruit_MAX31856.h> 
+#include "max6675.h"
 #include <PID_v1.h>
 
 // ***** TYPE DEFINITIONS *****
@@ -251,13 +251,13 @@ unsigned char buzzerPin = 14;
 unsigned char switchPin = A1;
 unsigned char ledPin = LED_BUILTIN;
 #elif VERSION == 2
-unsigned char ssrPin = A0;
-unsigned char fanPin = A1;
-unsigned char thermocoupleCSPin = 10;
-unsigned char ledPin = 4;
-unsigned char buzzerPin = 5;
-unsigned char switchStartStopPin = 3;
-unsigned char switchLfPbPin = 2;
+unsigned char ssrPin = 15;
+//unsigned char fanPin = A1;
+unsigned char thermocoupleCSPin = 13;
+unsigned char ledPin = 2;
+//unsigned char buzzerPin = 5;
+unsigned char switchStartStopPin = 2;
+unsigned char switchLfPbPin = 16;
 #endif
 
 // ***** PID CONTROL VARIABLES *****
@@ -310,7 +310,7 @@ LiquidCrystal lcd(lcdRsPin, lcdEPin, lcdD4Pin, lcdD5Pin, lcdD6Pin, lcdD7Pin);
 Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 #endif
 // MAX31856 thermocouple interface
-Adafruit_MAX31856 thermocouple = Adafruit_MAX31856(thermocoupleCSPin);
+MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
 
 void setup()
 {
@@ -333,19 +333,15 @@ void setup()
   pinMode(ssrPin, OUTPUT);
 
   // Buzzer pin initialization to ensure annoying buzzer is off
-  digitalWrite(buzzerPin, LOW);
-  pinMode(buzzerPin, OUTPUT);
+ // digitalWrite(buzzerPin, LOW);
+  //pinMode(buzzerPin, OUTPUT);
 
   // LED pins initialization and turn on upon start-up (active high)
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, HIGH);
 
-  // Initialize thermocouple interface
-  thermocouple.begin();
-  thermocouple.setThermocoupleType(MAX31856_TCTYPE_K);
-
   // Start-up splash
-  digitalWrite(buzzerPin, HIGH);
+ // digitalWrite(buzzerPin, HIGH);
 #if VERSION == 1
   lcd.begin(8, 2);
   lcd.createChar(0, degree);
@@ -357,8 +353,8 @@ void setup()
   oled.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   oled.display();
 #endif
-  digitalWrite(buzzerPin, LOW);
-  delay(2000);
+ // digitalWrite(buzzerPin, LOW);
+  //delay(2000);
 #if VERSION == 1
   lcd.clear();
   lcd.print(F(" v1.00  "));
@@ -408,7 +404,7 @@ void loop()
     // Read thermocouple next sampling period
     nextRead += SENSOR_SAMPLING_TIME;
     // Read current temperature
-    input = thermocouple.readThermocoupleTemperature();
+    input = thermocouple.readCelsius();
     // Check for thermocouple fault
     fault = thermocouple.readFault();
 
@@ -684,9 +680,9 @@ void loop()
       if (input <= TEMPERATURE_COOL_MIN)
       {
         // Retrieve current time for buzzer usage
-        buzzerPeriod = millis() + 1000;
+       buzzerPeriod = millis() + 1000;
         // Turn on buzzer to indicate completion
-        digitalWrite(buzzerPin, HIGH);
+       // digitalWrite(buzzerPin, HIGH);
         // Turn off reflow process
         reflowStatus = REFLOW_STATUS_OFF;
         // Proceed to reflow Completion state
@@ -698,7 +694,7 @@ void loop()
       if (millis() > buzzerPeriod)
       {
         // Turn off buzzer
-        digitalWrite(buzzerPin, LOW);
+       // digitalWrite(buzzerPin, LOW);
         // Reflow process ended
         reflowState = REFLOW_STATE_IDLE;
       }
